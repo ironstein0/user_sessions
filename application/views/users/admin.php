@@ -7,12 +7,15 @@
 <script>
 	var connection = new WebSocket('ws://127.0.0.1:8080', ['soap', 'xmpp']);
 
-	function submit() {
+	const submit = () => {
 		$.ajax({
         url: "/users/kill_all",
-        type: "post",
+				type: "post",
+				success: reload_all_clients
 		});
+	}
 
+	const reload_all_clients = () => {
 		// TODO: make sure connection.onOpen before sending
 		// the message.
 		connection.send('reload');

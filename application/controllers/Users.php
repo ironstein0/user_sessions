@@ -39,6 +39,7 @@ class Users extends CI_Controller {
 			} elseif (!$this->session_validity_model->session_valid($session_id)) {
 				// session validity has expired, destroy session.
 				session_destroy();
+				$this->session_validity_model->destroy_session($session_id);
 				redirect('users/session_destroyed');
 			}
 

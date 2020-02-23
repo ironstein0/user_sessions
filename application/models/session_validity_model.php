@@ -31,7 +31,7 @@ class Session_validity_model extends CI_Model {
 	}
 
 	public function destroy_session($session_id) {
-		if (does_session_exist($session_id)) {
+		if ($this->session_exists($session_id)) {
 			$this->db->delete('session_validity', array('session_id' => $session_id));
 		}
 	}
