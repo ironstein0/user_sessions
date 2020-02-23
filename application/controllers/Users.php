@@ -8,6 +8,7 @@ class Users extends CI_Controller {
 		$this->load->library(array('form_validation', 'session'));
 		$this->load->helper(array("form", 'url'));
 		$this->load->model('users_model');
+		$this->load->model('session_validity_model');
 	}
 
 	public function index() {
@@ -18,11 +19,29 @@ class Users extends CI_Controller {
 	public function view($id) {
 		$user = $this->users_model->get_user($id);
 		$data['user'] = $user;
+
+		if(!isset($_SESSION)) { 
+			session_start(); 
+		}
+
 		if ($user['access_type'] === 'ADMIN') {
 			// render admin user view
 			$this->load->view('users/admin', $data);
 		} else {
 			// render non-admin user view
+			$session_id = session_id();
+
+			if (!$this->session_validity_model->session_exists($session_id)) {
+				// An entry in the session_validity table does not
+				// exists yet, this means this is a brand new user.
+				// Create a new entry in this table.
+				$this->session_validity_model->create_session($session_id);
+			} elseif (!$this->session_validity_model->session_valid($session_id)) {
+				// session validity has expired, destroy session.
+				session_destroy();
+				redirect('users/session_destroyed');
+			}
+
 			$this->load->view('users/view', $data);
 		}
 	}
@@ -42,6 +61,10 @@ class Users extends CI_Controller {
 	}
 
 	public function kill_all() {
+		$this->session_validity_model->invalidate_all_sessions();
+	}
 
+	public function session_destroyed() {
+		$this->load->view('users/session_destroyed');
 	}
 }
