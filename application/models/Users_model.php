@@ -10,8 +10,8 @@ class Users_model extends CI_Model {
 	}
 
 	public function get_user($id) {
-		$query = $this->db->get_where('users', array('id' => $id));
-		return $query->result();
+		$query = $this->db->query('SELECT * FROM users WHERE id = ?', array($id));
+		return get_object_vars($query->row());
 	}
 
 	public function create_user($name) {
