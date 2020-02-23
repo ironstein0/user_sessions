@@ -14,8 +14,8 @@ class Users_model extends CI_Model {
 		return get_object_vars($query->row());
 	}
 
-	public function create_user($name) {
-		$data = array('name' => $name);
+	public function create_user($name, $access_type = 'USER') {
+		$data = array('name' => $name, 'access_type' => $access_type);
 		return $this->db->insert('users', $data);
 	}
 }
