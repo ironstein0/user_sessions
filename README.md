@@ -1,70 +1,116 @@
-###################
-What is CodeIgniter
-###################
+### Directory Structure
 
-CodeIgniter is an Application Development Framework - a toolkit - for people
-who build web sites using PHP. Its goal is to enable you to develop projects
-much faster than you could if you were writing code from scratch, by providing
-a rich set of libraries for commonly needed tasks, as well as a simple
-interface and logical structure to access these libraries. CodeIgniter lets
-you creatively focus on your project by minimizing the amount of code needed
-for a given task.
+- `/application` contains the Codeigniter PHP application, that is served by Apache
+- `/phpmyadmin` contains the phpmyadmin source
+- `/wsserver` contains the Node.js websocket server
 
-*******************
-Release Information
-*******************
+### Setting up the development environment (for MacOSX)
 
-This repo contains in-development code for future releases. To download the
-latest stable release please visit the `CodeIgniter Downloads
-<https://codeigniter.com/download>`_ page.
+#### Enable Apache
 
-**************************
-Changelog and New Features
-**************************
+```
+apachectl start
+```
 
-You can find a list of all changes for each release in the `user
-guide change log <https://github.com/bcit-ci/CodeIgniter/blob/develop/user_guide_src/source/changelog.rst>`_.
+#### Enable PHP for Apache
 
-*******************
-Server Requirements
-*******************
+edit the `/etc/apache2/httpd.conf` file to uncomment the following line
 
-PHP version 5.6 or newer is recommended.
+```
+LoadModule php7_module libexec/apache2/libphp7.so
+```
 
-It should work on 5.3.7 as well, but we strongly advise you NOT to run
-such old versions of PHP, because of potential security and performance
-issues, as well as missing features.
+#### Install MySQL, from https://dev.mysql.com/downloads/mysql/
 
-************
-Installation
-************
+#### Connect PHP to MySQL
 
-Please see the `installation section <https://codeigniter.com/user_guide/installation/index.html>`_
-of the CodeIgniter User Guide.
+```
+mkdir /var/mysql
+cd /var/mysql
+ln -s /tmp/mysql.sock mysql.sock
+```
 
-*******
-License
-*******
+#### Create VirtualHosts
 
-Please see the `license
-agreement <https://github.com/bcit-ci/CodeIgniter/blob/develop/user_guide_src/source/license.rst>`_.
+Withough using VirtualHosts, every project you create will be accessible at
+their particular paths. For example: `http://localhost/rhombus`. In order to
+access the sites individually instead, in our case `http://rhombus.local`, we must create a corresponding VirtualHost. To do so, uncomment the following two lines in `/etc/apache2/httpd.conf`
 
-*********
-Resources
-*********
+```
+Include /private/etc/apache2/extra/httpd-userdir.conf
+Include /private/etc/apache2/extra/httpd-vhosts.conf
+```
 
--  `User Guide <https://codeigniter.com/docs>`_
--  `Language File Translations <https://github.com/bcit-ci/codeigniter3-translations>`_
--  `Community Forums <http://forum.codeigniter.com/>`_
--  `Community Wiki <https://github.com/bcit-ci/CodeIgniter/wiki>`_
--  `Community Slack Channel <https://codeigniterchat.slack.com>`_
+These two lines do exactly what they say, they load supplimental configuration
+files from the `/private/etc/apache2/extra` directory. These are just other
+configuration files responsible for settings corresponding to specific functions.
 
-Report security issues to our `Security Panel <mailto:security@codeigniter.com>`_
-or via our `page on HackerOne <https://hackerone.com/codeigniter>`_, thank you.
+Also uncomment the following line:
 
-***************
-Acknowledgement
-***************
+```
+LoadModule userdir_module libexec/apache2/mod_userdir.so
+```
 
-The CodeIgniter team would like to thank EllisLab, all the
-contributors to the CodeIgniter project and you, the CodeIgniter user.
+Then, edit `/private/etc/apache2/extra/httpd_userdir.conf` to uncomment the
+following line
+
+```
+Include /private/etc/apache2/users/*.conf
+```
+
+This asks apache to load user specific configuration files from the `/private/etc/apache2/users/` directory. Lets' create a configuration file `/private/etc/apache2/users/your_username.conf` there, that we'll use to specify filesystem specific configuration settings. Add the following content to the file
+
+```
+<Directory "/Users/your_username/Sites/">
+  AllowOverride All
+  Options Indexes MultiViews FollowSymLinks
+  Require all granted
+</Directory>
+```
+
+This grants apache the necessary permissions to access your projects within the
+`~/Sites` folder, which, by convention, is the location for all the hosted websites
+on a server.
+
+Now that apache can access this location, let's create a VirtualHost that points to a project within this location. Edit the `/private/etc/apache2/extra/httpd-vhosts.conf` file that we included before, to add the following to it:
+
+```
+<VirtualHost *:80>
+  DocumentRoot "/Users/your_username/Sites/rhombus/"
+  ServerName rhombus.local
+ 	ErrorLog "/private/var/log/apache2/rhombus.local-error_log"
+  CustomLog "/private/var/log/apache2/rhombus.local-access_log" common
+</VirtualHost>
+```
+
+If you try to access `http://rhombus.local`, Apache will try to host an
+index file from within `~/Sites/rhombus` folder. This is where we shall host
+our Codeigniter & phpmyadmin apps from. Tada!
+
+#### Clone the project
+
+```
+git clone https://github.com/ironstein0/user_sessions ~/Sites/rhombus
+```
+
+This will give you Codeigniter and phpmyadmin out of the box.
+
+#### Setup database
+
+Setup your mysql development database, and then add the credentials to `application/config/database.php`
+
+#### Start the servers
+
+Finally, restart apache so that it is configured as per the new settings
+
+```
+sudo apachectl restart
+```
+
+Then, spin up the node websocket server. To do so
+
+```
+cd wsserver
+npm install
+npm start
+```
